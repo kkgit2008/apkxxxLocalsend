@@ -39,11 +39,35 @@ jobs:
           mkdir -p $APK_BUILD_DIR
           cp -r . $APK_BUILD_DIR
 
-      - name: Decode key.properties file
+
+      - name: Set up debug signing
         working-directory: ${{ env.APK_BUILD_DIR }}
-        env:
-          ENCODED_STRING: ${{ secrets.ANDROID_KEY_PROPERTIES }}
-        run: echo $ENCODED_STRING | base64 -di > app/android/key.properties
+        run: >
+          mkdir -p ~/.android
+
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkey -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+          echo "storePassword=android" > app/android/key.properties
+
+          echo "keyPassword=android" >> app/android/key.properties
+
+          echo "keyAlias=androiddebugkey" >> app/android/key.properties
+
+          echo "storeFile=$HOME/.android/debug.keystore" >>
+          app/android/key.properties
+
+#//       - name: Decode key.properties file
+#//         working-directory: ${{ env.APK_BUILD_DIR }}
+#//         env:
+#//           ENCODED_STRING: ${{ secrets.ANDROID_KEY_PROPERTIES }}
+#//         run: echo $ENCODED_STRING | base64 -di > app/android/key.properties
+
 
       - name: Decode android-keystore.jks file
         working-directory: ${{ env.APK_BUILD_DIR }}
